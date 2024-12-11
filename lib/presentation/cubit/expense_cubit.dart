@@ -1,12 +1,13 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../../data/models/expense_model.dart';
 import '../../domain/entities/expense.dart';
 import '../../domain/usecases/manage_expenses.dart';
 
 class ExpenseCubit extends Cubit<List<ExpenseModel>> {
   final ManageExpenses manageExpenses;
-
-  ExpenseCubit(this.manageExpenses) : super([]);
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
+  ExpenseCubit(this.manageExpenses,this.flutterLocalNotificationsPlugin) : super([]);
 
   // Fetch expenses from the use case
   Future<void> fetchExpenses() async {
@@ -21,22 +22,40 @@ class ExpenseCubit extends Cubit<List<ExpenseModel>> {
   // Add expense using the manageExpenses use case
   Future<void> addExpense(Expense expense) async {
     try {
-      // Convert Expense (domain layer) to ExpenseModel (data layer)
       final expenseModel = ExpenseModel(
         id: null,  // ID should be null, database will generate the ID
         description: expense.description,
         amount: expense.amount,
         date: expense.date,
-
       );
+      await manageExpenses.addExpense(expenseModel);
+      fetchExpenses();
 
-      // Call the use case to add the expense
-      await manageExpenses.addExpense(expenseModel);  // Use the use case to add the expense
-      fetchExpenses();  // Fetch updated expenses after adding
+      // Show notification after adding expense
+      _showNotification('Expense Added', 'Added ${expense.amount}');
     } catch (e) {
-      // Handle errors if necessary (could show a message to the user)
       print('Error adding expense: $e');
     }
+  }
+
+  // Show local notification
+  void _showNotification(String title, String body) async {
+    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+      'expense_channel',
+      'Expense Notifications',
+      channelDescription: 'Notifications for expense tracking',
+      importance: Importance.high,
+      priority: Priority.high,
+    );
+
+    const NotificationDetails notificationDetails = NotificationDetails(android: androidDetails);
+
+    await flutterLocalNotificationsPlugin.show(
+      0,
+      title,
+      body,
+      notificationDetails,
+    );
   }
 
   // Update expense using the manageExpenses use case
@@ -62,6 +81,8 @@ class ExpenseCubit extends Cubit<List<ExpenseModel>> {
     }
   }
 
+
+
   // Delete expense using the manageExpenses use case
   Future<void> deleteExpense(int id) async {
     try {
@@ -72,4 +93,6 @@ class ExpenseCubit extends Cubit<List<ExpenseModel>> {
       print('Error deleting expense: $e');
     }
   }
+
+
 }
