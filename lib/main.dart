@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:timezone/data/latest.dart';
+import 'package:timezone/timezone.dart' as tz;
 import 'presentation/cubit/expense_cubit.dart';
 import 'domain/usecases/manage_expenses.dart';
 import 'data/datasources/expense_local_data_source.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'utils/routes.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
+  initializeTimeZones();
   final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
   // Initialize local notifications
@@ -55,7 +57,7 @@ class MyApp extends StatelessWidget {
         BlocProvider(
           create: (context) => ExpenseCubit(
             ManageExpenses(ExpenseLocalDataSource()),
-            flutterLocalNotificationsPlugin,  // Pass the plugin here
+            flutterLocalNotificationsPlugin,
           ),
         ),
       ],
@@ -68,4 +70,50 @@ class MyApp extends StatelessWidget {
       ),
     );
   }
+}
+
+// Schedule a daily notification
+Future<void> scheduleDailyExpenseNotification(
+    FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin,
+    ) async {
+  // You can set a specific time for the notification (e.g., 8:00 AM)
+  var time = Time(21, 38, 0); // Time set to 8:00 AM daily
+
+  const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+    'expense_channel', // id
+    'Daily Expense Notification', // title
+    channelDescription: 'Channel for daily expense notifications',
+    importance: Importance.max,
+    priority: Priority.high,
+    ticker: 'ticker',
+  );
+
+  const NotificationDetails notificationDetails = NotificationDetails(
+    android: androidDetails,
+  );
+
+  // Schedule the notification to repeat daily
+  await flutterLocalNotificationsPlugin.zonedSchedule(
+    0, // notification ID
+    'Daily Expense Reminder',
+    'Remember to track your daily expenses!',
+    _nextInstanceOfTime(time), // Next instance of the specified time
+    notificationDetails,
+    androidAllowWhileIdle: true,
+    uiLocalNotificationDateInterpretation:
+    UILocalNotificationDateInterpretation.wallClockTime,
+    matchDateTimeComponents: DateTimeComponents.time, // Match time components (daily)
+  );
+}
+
+// Helper function to get the next occurrence of a specific time
+tz.TZDateTime _nextInstanceOfTime(Time time) {
+  final now = tz.TZDateTime.now(tz.local);
+  final scheduledDate =
+  tz.TZDateTime(tz.local, now.year, now.month, now.day, time.hour, time.minute);
+
+  if (scheduledDate.isBefore(now)) {
+    return scheduledDate.add(Duration(days: 1));
+  }
+  return scheduledDate;
 }
