@@ -167,7 +167,13 @@ class _ExpenseListPageState extends State<ExpenseListPage> {
         },
       ),
 
-
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.pushNamed(context, '/summaryPage');  // Navigate to summary page
+        },
+        child: Icon(Icons.show_chart),  // Icon for summary
+        tooltip: 'Summary',
+      ),
 
     );
   }

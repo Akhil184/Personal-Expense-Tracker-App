@@ -36,12 +36,7 @@ class AppRoutes {
         final expense = settings.arguments as ExpenseModel?;
         return MaterialPageRoute(
           builder: (_) => ExpenseSummaryPage(
-            expense: expense ?? ExpenseModel(
-              id:null, // Provide default values
-              amount: 0.0,
-              date: DateTime.now(),
-              description: '',
-            ),
+
           ),
         );
       default:

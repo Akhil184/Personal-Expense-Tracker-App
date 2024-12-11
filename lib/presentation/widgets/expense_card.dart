@@ -26,7 +26,7 @@ class ExpenseCard extends StatelessWidget {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => ExpenseSummaryPage(expense: expense), // Pass the expense data to the summary page
+          builder: (context) => ExpenseSummaryPage(), // Pass the expense data to the summary page
         ),
       );
     },
